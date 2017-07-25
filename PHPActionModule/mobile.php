@@ -3,21 +3,22 @@ require (dirname(__FILE__) . "/include/common.inc.php");
 require (dirname(__FILE__)."/include/mobile.inc.php");
 header ("Content-Type: text/html; charset=utf-8");
 
-$dsql = new DedeSql(false);
+$use_mysqli = (version_compare(PHP_VERSION, '7.0.0', '>=');
+if($use_mysqli)
+	$dsql = new DedeSqli(false);
+else
+	$dsql = new DedeSql(false);
+
 $cfg_templets_dir = $cfg_basedir.$cfg_templets_dir;
 $channellist = '';
 $newartlist = '';
 $channellistnext = '';
-$hostName = 'http://' . $_SERVER['HTTP_HOST'];
+$hostName = '//' . $_SERVER['HTTP_HOST'];
 
 if (empty($action))
-{
     $action = 'index';
-}
 elseif ($action !='list' && $action != 'index' && $action != 'article') 
-{
     die('action error');
-}
 
 
 
@@ -27,7 +28,7 @@ $dsql->Execute();
 $channellist = '<li><a href="' . $hostName . '">首页</a></li>';
 while ($row=$dsql->GetObject())
 {
-    $channellist .= "<li><a href='{$hostName}/list/{$row->id}'>{$row->typename}</a></li>";
+    $channellist .= "<li><a href='{$hostName}/mobile.php?action=list&id={$row->id}'>{$row->typename}</a></li>";
 }
 
 //当前时间
@@ -44,15 +45,15 @@ if ($action=='index')
     $dsql->Execute();
     while ($row=$dsql->GetObject())
     {
-        $newartlist .= "<li class='am-g'><a href='{$hostName}/article/{$row->id}' class='am-list-item-hd'>".ConvertStr($row->title)."</a></li>";
+        $newartlist .= "<li class='am-g'><a href='{$hostName}/mobile.php?action=article&id={$row->id}' class='am-list-item-hd'>".ConvertStr($row->title)."</a></li>";
     }
 
-    //typeid=1的前10条
-    $dsql->SetQuery("Select id,title,pubdate From `#@__archives` where channel=1 And arcrank = 0 And typeid=1 order by id desc limit 0,5");
+    //typeid=1的前10条,且对arcrank无限制
+    $dsql->SetQuery("Select id,title,pubdate From `#@__archives` where channel=1 And typeid=1 order by id desc limit 0,5");
     $dsql->Execute();
     while ($row=$dsql->GetObject())
     {
-        $newartlist2 .= "<li class='am-g'><a href='{$hostName}/article/{$row->id}' class='am-list-item-hd'>".ConvertStr($row->title)."</a></li>";
+        $newartlist2 .= "<li class='am-g'><a href='{$hostName}/mobile.php?action=article&id={$row->id}' class='am-list-item-hd'>".ConvertStr($row->title)."</a></li>";
     }
 
     //typeid=2的前10条
@@ -60,7 +61,7 @@ if ($action=='index')
     $dsql->Execute();
     while ($row=$dsql->GetObject())
     {
-        $newartlist3 .= "<li class='am-g'><a href='{$hostName}/article/{$row->id}' class='am-list-item-hd'>".ConvertStr($row->title)."</a></li>";
+        $newartlist3 .= "<li class='am-g'><a href='{$hostName}/mobile.php?action=article&id={$row->id}' class='am-list-item-hd'>".ConvertStr($row->title)."</a></li>";
     }
 
     //找4张幻灯片flag=f的文章
@@ -68,7 +69,7 @@ if ($action=='index')
     $dsql->Execute();
     while ($row=$dsql->GetObject())
     {
-        $newartlistSlide .= "<li><a href='{$hostName}/article/{$row->id}'><img style='max-width:500px;margin: 0 auto;height:180px;' src='{$row->litpic}'><div class='am-slider-desc'>{$row->title}</div></a></li>";
+        $newartlistSlide .= "<li><a href='{$hostName}/mobile.php?action=article&id={$row->id}'><img style='max-width:500px;margin: 0 auto;height:180px;' src='{$row->litpic}'><div class='am-slider-desc'>{$row->title}</div></a></li>";
     }
 
     //找4张最新图片flag=p的文章
@@ -77,7 +78,7 @@ if ($action=='index')
 
     while ($row=$dsql->GetObject())
     {
-        $newartlistPic .= "<li><div class='am-gallery-item'><a href='{$hostName}/article/{$row->id}' class=><img style='width:145px;height:82px;' src='{$row->litpic}'/><h3 class='am-gallery-title'>{$row->title}</h3><div class='am-gallery-desc'>".date("m-d",$row->pubdate)."</div></a></div></li>";
+        $newartlistPic .= "<li><div class='am-gallery-item'><a href='{$hostName}/mobile.php?action=article&id={$row->id}' class=><img style='width:145px;height:82px;' src='{$row->litpic}'/><h3 class='am-gallery-title'>{$row->title}</h3><div class='am-gallery-desc'>".date("m-d",$row->pubdate)."</div></a></div></li>";
     }
 
     $dsql->Close();
@@ -88,7 +89,7 @@ if ($action=='index')
 //列表
 else if ($action=='list')
 {
-    $id = ereg_replace("[^0-9]", '', $id);
+    $id = preg_replace("/[^0-9]/", '', $id);
     if (empty($id))
     {
         exit('List Error!');
@@ -113,7 +114,7 @@ else if ($action=='list')
 
     while ($row=$dsql->GetObject())
     {
-        $channellistnext .= "<li><a href='{$hostName}/list/{$row->id}'>".ConvertStr($row->typename)."</a></li>";
+        $channellistnext .= "<li><a href='{$hostName}/mobile.php?action=list&id={$row->id}'>".ConvertStr($row->typename)."</a></li>";
     }
 
     //栏目内容(分页输出)
@@ -127,7 +128,7 @@ else if ($action=='list')
 }
 else if ($action=='article')
 {
-    $id = ereg_replace("[^0-9]", '', $id);
+    $id = preg_replace("/[^0-9]/", '', $id);
     if (empty($id))
     {
         exit('Article Error!');
@@ -137,7 +138,10 @@ else if ($action=='article')
       left join `#@__arctype` tp on tp.id=arc.typeid
       left join `#@__addonarticle` addon on addon.aid=arc.id
       where arc.id='$id' ";
-    $row = $dsql->GetOne($query,MYSQL_ASSOC);
+    if($use_mysqli)
+    	$row = $dsql->GetOne($query,MYSQLI_ASSOC);
+    else
+	$row = $dsql->GetOne($query,MYSQL_ASSOC);
     foreach ($row as $k=>$v)
     {
         $$k = $v;
@@ -185,5 +189,3 @@ else
 {
     exit('error');
 }
-
-?>

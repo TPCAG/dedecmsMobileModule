@@ -13,7 +13,7 @@ function ConvertStr($str)
 {
     $str = str_replace("&amp;","##amp;",$str);
     $str = str_replace("&","&amp;",$str);
-    $str = ereg_replace("[\"><']","",$str);
+    $str = preg_replace("/[\"><']/","",$str);
     $str = str_replace("##amp;","&amp;",$str);
     return $str;
 }
@@ -44,5 +44,4 @@ function articlePagination($aid, $newBodyLength, $pageno = 1)
 
     return $pagination;
 }
-
 ?>
